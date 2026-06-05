@@ -12,45 +12,59 @@ namespace MindLog.Api.Controllers
     {
         private readonly IJournalService _journalService;
         private readonly IJournalEntryRepository _repository;
+        private readonly ILogger<JournalController> _logger;
 
-        public JournalController(IJournalService journalService, IJournalEntryRepository repository)
+        public JournalController(
+            IJournalService journalService, 
+            IJournalEntryRepository repository, 
+            ILogger<JournalController> logger)
         {
             _journalService = journalService;
             _repository = repository;
+            _logger = logger;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateEntry([FromBody] CreateJournalDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.Content))
-                return BadRequest(new { message = "El contenido del diario no puede estar vacío." });
+            try
+            {                
+                var entry = new JournalEntry
+                {
+                    UserId = request.UserId,
+                    Content = request.Content,
+                    EmotionId = request.EmotionId,
+                    Intensity = request.Intensity,
+                    EntryContexts = request.ContextTagIds.Select(tagId => new EntryContext { TagId = tagId }).ToList()
+                };
 
-            if (request.Intensity < 1 || request.Intensity > 10)
-                return BadRequest(new { message = "La intensidad debe estar entre 1 y 10." });
-
-            var entry = new JournalEntry
+                var createdEntry = await _journalService.CreateJournalEntryAsync(entry, request.EmotionName);
+                return Ok(createdEntry);
+            }
+            catch (Exception ex)
             {
-                UserId = request.UserId,
-                Content = request.Content,
-                EmotionId = request.EmotionId,
-                Intensity = request.Intensity,
-                EntryContexts = request.ContextTagIds.Select(tagId => new EntryContext { TagId = tagId }).ToList()
-            };
-
-            var createdEntry = await _journalService.CreateJournalEntryAsync(entry, request.EmotionName);
-
-            return Ok(createdEntry);
+                _logger.LogError(ex, "Error crítico al crear la entrada del diario para el usuario {UserId}", request.UserId);
+                return StatusCode(500, new { message = "Ocurrió un error interno en el servidor al procesar tu solicitud. Intenta nuevamente." });
+            }
         }
 
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetUserEntries(Guid userId)
         {
-            var entries = await _repository.GetAllByUserIdAsync(userId);
-            
-            if (!entries.Any())
-                return NotFound(new { message = "No se encontraron diarios para este usuario." });
+            try
+            {
+                var entries = await _repository.GetAllByUserIdAsync(userId);
+                
+                if (!entries.Any())
+                    return NotFound(new { message = "No se encontraron diarios para este usuario." });
 
-            return Ok(entries);
+                return Ok(entries);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error crítico al consultar los diarios del usuario {UserId}", userId);
+                return StatusCode(500, new { message = "Ocurrió un error al cargar tus datos emocionales." });
+            }
         }
     }
 }
