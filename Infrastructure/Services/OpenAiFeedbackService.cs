@@ -28,19 +28,13 @@ namespace MindLog.Api.Infrastructure.Services
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-            var prompt = $@"
-Eres un asistente terapéutico cognitivo-conductual empático. 
-Analiza este diario de un paciente cuya emoción principal hoy es '{emotionName}'.
-Diario: '{content}'
-
-Devuelve ESTRICTAMENTE un objeto JSON con dos propiedades:
-1. 'feedback': Un mensaje corto, humano y empático (máximo 3 líneas) haciendo de 'espejo cognitivo'.
-2. 'pattern': Una etiqueta en MAYÚSCULAS del patrón cognitivo detectado (ej. CATASTROFIZACION, PENSAMIENTO_ABSOLUTISTA, ANSIEDAD_ANTICIPATORIA, NEUTRAL).
-No agregues texto extra, solo el JSON.";
+            // Se obtiene la plantilla desde appsettings.json y se inyectan las variables
+            var promptTemplate = _configuration["AiSettings:PromptTemplate"];
+            var prompt = string.Format(promptTemplate!, emotionName, content);
 
             var requestBody = new
             {
-                model = "gpt-3.5-turbo",
+                model = "llama-3.1-8b-instant",
                 messages = new[]
                 {
                     new { role = "user", content = prompt }
@@ -52,8 +46,17 @@ No agregues texto extra, solo el JSON.";
             
             try
             {
-                var response = await _httpClient.PostAsync("https://api.openai.com/v1/chat/completions", jsonContent);
-                response.EnsureSuccessStatusCode();
+                var response = await _httpClient.PostAsync("https://api.groq.com/openai/v1/chat/completions", jsonContent);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorDetails = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("\n==================================");
+                    Console.WriteLine($"ERROR DE API EXTERNA (Código {response.StatusCode}):");
+                    Console.WriteLine(errorDetails);
+                    Console.WriteLine("==================================\n");
+                    return ("Hemos guardado tu entrada exitosamente.", "ERROR_IA");
+                }
 
                 var responseString = await response.Content.ReadAsStringAsync();
                 using var document = JsonDocument.Parse(responseString);
@@ -69,8 +72,11 @@ No agregues texto extra, solo el JSON.";
                 
                 return (aiResult?.Feedback ?? "Reflexión generada.", aiResult?.Pattern ?? "NO_DETECTADO");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine("\n==================================");
+                Console.WriteLine($"ERROR INTERNO: {ex.Message}");
+                Console.WriteLine("==================================\n");
                 return ("Hemos guardado tu entrada exitosamente.", "ERROR_IA");
             }
         }

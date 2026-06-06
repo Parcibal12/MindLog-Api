@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using MindLog.Api.Infrastructure.Data;
 using MindLog.Api.Core.Domain.Interfaces;
@@ -7,11 +8,15 @@ using MindLog.Api.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
 
 var connectionString = builder.Configuration.GetConnectionString("SupabaseConnection");
+
 builder.Services.AddDbContext<MindLogDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 builder.Services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
 
