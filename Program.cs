@@ -21,7 +21,10 @@ builder.Services.AddDbContext<MindLogDbContext>(options =>
 builder.Services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
 
 builder.Services.AddScoped<IJournalService, JournalService>();
+builder.Services.AddScoped<IClinicalReportService, ClinicalReportService>();
 
+builder.Services.AddScoped<IReportGenerator, QuestPdfReportGenerator>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHttpClient<IAiFeedbackService, OpenAiFeedbackService>();
 
 builder.Services.AddEndpointsApiExplorer();
