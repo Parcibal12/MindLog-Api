@@ -1,4 +1,5 @@
 using MindLog.Api.Core.Domain.Entities;
+using MindLog.Api.Core.Application.Services.DTOs;
 
 namespace MindLog.Api.Core.Domain.Interfaces
 {
@@ -10,5 +11,6 @@ namespace MindLog.Api.Core.Domain.Interfaces
         Task<JournalEntry> AddAsync(JournalEntry entry);
         Task UpdateAsync(JournalEntry entry);
         Task DeleteAsync(Guid id);
+        Task<AnalyticsSummaryDto> GetAnalyticsSummaryAsync(Guid userId, DateTime startDate, DateTime endDate);
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MindLog.Api.Core.Domain.Entities;
 using MindLog.Api.Core.Domain.Interfaces;
 using MindLog.Api.Infrastructure.Data;
+using MindLog.Api.Core.Application.Services.DTOs;
 
 namespace MindLog.Api.Infrastructure.Repositories
 {
@@ -65,6 +66,70 @@ namespace MindLog.Api.Infrastructure.Repositories
                 _context.JournalEntries.Update(entry);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<AnalyticsSummaryDto> GetAnalyticsSummaryAsync(Guid userId, DateTime startDate, DateTime endDate)
+        {
+            var query = _context.JournalEntries
+                .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate);
+
+            var totalEntries = await query.CountAsync();
+
+            if (totalEntries == 0) return new AnalyticsSummaryDto(); 
+
+            var dominantEmotion = await query
+                .Where(j => j.Emotion != null)
+                .GroupBy(j => j.Emotion!.Name)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .FirstOrDefaultAsync() ?? "Ninguna";
+
+            var dominantPattern = await query
+                .Where(j => j.AiPattern != null)
+                .GroupBy(j => j.AiPattern)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .FirstOrDefaultAsync() ?? "Ninguno";
+
+            var emotionDist = await query
+                .Where(j => j.Emotion != null)
+                .GroupBy(j => j.Emotion!.Name)
+                .Select(g => new { Emotion = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Emotion, x => x.Count);
+
+            var moodTrend = await query
+                .GroupBy(j => j.CreatedAt.Date)
+                .Select(g => new DailyIntensityDto
+                {
+                    Date = g.Key,
+                    AverageIntensity = g.Average(x => x.Intensity)
+                })
+                .OrderBy(x => x.Date)
+                .ToListAsync();
+
+            var topTags = await _context.JournalEntries
+                .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate)
+                .SelectMany(j => j.EntryContexts)
+                .Where(ec => ec.ContextTag != null)
+                .GroupBy(ec => ec.ContextTag!.Name)
+                .Select(g => new ContextTagCountDto
+                {
+                    TagName = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(5)
+                .ToListAsync();
+
+            return new AnalyticsSummaryDto
+            {
+                TotalEntries = totalEntries,
+                DominantEmotion = dominantEmotion,
+                DominantPattern = dominantPattern,
+                EmotionDistribution = emotionDist,
+                MoodTrend = moodTrend,
+                TopDisparadores = topTags
+            };
         }
     }
 }
