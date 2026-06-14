@@ -27,6 +27,7 @@ namespace MindLog.Api.Infrastructure.Repositories
         public async Task<IEnumerable<JournalEntry>> GetAllByUserIdAsync(Guid userId)
         {
             return await _context.JournalEntries
+                .AsNoTracking()
                 .Include(j => j.Emotion)
                 .Include(j => j.EntryContexts)
                     .ThenInclude(ec => ec.ContextTag)
@@ -38,6 +39,7 @@ namespace MindLog.Api.Infrastructure.Repositories
         public async Task<IEnumerable<JournalEntry>> GetByUserIdAndDateRangeAsync(Guid userId, DateTime startDate, DateTime endDate)
         {
             return await _context.JournalEntries
+                .AsNoTracking()
                 .Include(j => j.Emotion)
                 .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate && j.DeletedAt == null)
                 .OrderByDescending(j => j.CreatedAt)
@@ -71,6 +73,7 @@ namespace MindLog.Api.Infrastructure.Repositories
         public async Task<AnalyticsSummaryDto> GetAnalyticsSummaryAsync(Guid userId, DateTime startDate, DateTime endDate)
         {
             var query = _context.JournalEntries
+                .AsNoTracking() 
                 .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate);
 
             var totalEntries = await query.CountAsync();
@@ -108,6 +111,7 @@ namespace MindLog.Api.Infrastructure.Repositories
                 .ToListAsync();
 
             var topTags = await _context.JournalEntries
+                .AsNoTracking()
                 .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate)
                 .SelectMany(j => j.EntryContexts)
                 .Where(ec => ec.ContextTag != null)

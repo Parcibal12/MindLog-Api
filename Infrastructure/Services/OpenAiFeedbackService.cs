@@ -28,7 +28,6 @@ namespace MindLog.Api.Infrastructure.Services
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
-            // Se obtiene la plantilla desde appsettings.json y se inyectan las variables
             var promptTemplate = _configuration["AiSettings:PromptTemplate"];
             var prompt = string.Format(promptTemplate!, emotionName, content);
 
@@ -66,6 +65,14 @@ namespace MindLog.Api.Infrastructure.Services
                     .GetProperty("message")
                     .GetProperty("content")
                     .GetString();
+
+                if (!string.IsNullOrEmpty(aiResponseContent))
+                {
+                    aiResponseContent = aiResponseContent
+                        .Replace("```json", "")
+                        .Replace("```", "")
+                        .Trim();
+                }
 
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var aiResult = JsonSerializer.Deserialize<AiResponseFormat>(aiResponseContent!, options);

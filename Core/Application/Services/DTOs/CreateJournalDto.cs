@@ -20,5 +20,8 @@ namespace MindLog.Api.Core.Application.DTOs
         public int Intensity { get; set; }
 
         public List<int> ContextTagIds { get; set; } = new List<int>();
+
+        public string? AiFeedback { get; set; }
+        public string? AiPattern { get; set; }
     }
 }
