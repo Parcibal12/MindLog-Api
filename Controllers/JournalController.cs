@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MindLog.Api.Core.Application.DTOs;
 using MindLog.Api.Core.Application.Services;
 using MindLog.Api.Core.Domain.Entities;
 using MindLog.Api.Core.Domain.Interfaces;
+using MindLog.Api.Infrastructure.Data; 
 
 namespace MindLog.Api.Controllers
 {
@@ -14,17 +16,20 @@ namespace MindLog.Api.Controllers
         private readonly IJournalEntryRepository _repository;
         private readonly ILogger<JournalController> _logger;
         private readonly IAiFeedbackService _aiFeedbackService;
+        private readonly MindLogDbContext _context;
 
         public JournalController(
             IJournalService journalService, 
             IJournalEntryRepository repository, 
             ILogger<JournalController> logger,
-            IAiFeedbackService aiFeedbackService)
+            IAiFeedbackService aiFeedbackService,
+            MindLogDbContext context)
         {
             _journalService = journalService;
             _repository = repository;
             _logger = logger;
             _aiFeedbackService = aiFeedbackService;
+            _context = context;
         }
 
         public class AnalyzeRequest { public required string Content { get; set; } }
@@ -134,6 +139,26 @@ namespace MindLog.Api.Controllers
                 _logger.LogError(ex, "Error crítico al consultar analíticas");
                 return StatusCode(500, new { message = "Error al cargar las estadísticas." });
             }
+        }
+
+        [HttpGet("emotions")]
+        public async Task<IActionResult> GetEmotions()
+        {
+            var emotions = await _context.Emotions
+                .AsNoTracking()
+                .Select(e => new { e.Id, e.Name, e.ColorHex })
+                .ToListAsync();
+            return Ok(emotions);
+        }
+
+        [HttpGet("tags")]
+        public async Task<IActionResult> GetContextTags()
+        {
+            var tags = await _context.ContextTags
+                .AsNoTracking()
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync();
+            return Ok(tags);
         }
     }
 }

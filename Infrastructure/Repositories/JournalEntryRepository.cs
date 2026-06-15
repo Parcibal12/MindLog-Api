@@ -74,7 +74,7 @@ namespace MindLog.Api.Infrastructure.Repositories
         {
             var query = _context.JournalEntries
                 .AsNoTracking() 
-                .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate);
+                .Where(j => j.UserId == userId && j.DeletedAt == null && j.CreatedAt >= startDate && j.CreatedAt <= endDate);
 
             var totalEntries = await query.CountAsync();
 
@@ -112,7 +112,7 @@ namespace MindLog.Api.Infrastructure.Repositories
 
             var topTags = await _context.JournalEntries
                 .AsNoTracking()
-                .Where(j => j.UserId == userId && j.CreatedAt >= startDate && j.CreatedAt <= endDate)
+                .Where(j => j.UserId == userId && j.DeletedAt == null && j.CreatedAt >= startDate && j.CreatedAt <= endDate)
                 .SelectMany(j => j.EntryContexts)
                 .Where(ec => ec.ContextTag != null)
                 .GroupBy(ec => ec.ContextTag!.Name)
@@ -124,6 +124,29 @@ namespace MindLog.Api.Infrastructure.Repositories
                 .OrderByDescending(x => x.Count)
                 .Take(5)
                 .ToListAsync();
+
+            if (topTags.Any())
+            {
+                var tagNames = topTags.Select(t => t.TagName).ToList();
+
+                var tagEmotions = await _context.JournalEntries
+                    .AsNoTracking()
+                    .Where(j => j.UserId == userId && j.DeletedAt == null && j.CreatedAt >= startDate && j.CreatedAt <= endDate)
+                    .SelectMany(j => j.EntryContexts)
+                    .Where(ec => ec.ContextTag != null && tagNames.Contains(ec.ContextTag!.Name))
+                    .Select(ec => new { Tag = ec.ContextTag!.Name, Emotion = ec.JournalEntry.Emotion!.Name })
+                    .ToListAsync();
+
+                foreach (var tag in topTags)
+                {
+                    tag.DominantEmotion = tagEmotions
+                        .Where(te => te.Tag == tag.TagName)
+                        .GroupBy(te => te.Emotion)
+                        .OrderByDescending(g => g.Count())
+                        .Select(g => g.Key)
+                        .FirstOrDefault() ?? dominantEmotion;
+                }
+            }
 
             return new AnalyticsSummaryDto
             {
