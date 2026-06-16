@@ -41,6 +41,7 @@ builder.Services.AddDbContext<MindLogDbContext>(options =>
 builder.Services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
 
 builder.Services.AddScoped<IJournalService, JournalService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IClinicalReportService, ClinicalReportService>();
 
 builder.Services.AddScoped<IReportGenerator, QuestPdfReportGenerator>();
