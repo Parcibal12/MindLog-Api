@@ -21,10 +21,14 @@ namespace MindLog.Api.Controllers
             {
                 await _reportService.ProcessAutomaticReportsAsync();
                 
-                return Ok(new { message = "Proceso de reportes finalizado. Los correos han sido enviados a los terapeutas correspondientes." });
+                return Ok(new { message = "Proceso de reportes finalizado. El correo ha sido enviado al terapeuta correspondiente." });
             }
             catch (Exception ex)
             {
+                Console.WriteLine("\n=== ERROR FATAL AL ENVIAR REPORTE ===");
+                Console.WriteLine(ex.ToString());
+                Console.WriteLine("=====================================\n");
+
                 return StatusCode(500, new 
                 { 
                     error = "Ocurrió un error al procesar los reportes clínicos.", 

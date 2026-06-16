@@ -43,6 +43,7 @@ builder.Services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
 builder.Services.AddScoped<IJournalService, JournalService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IClinicalReportService, ClinicalReportService>();
+builder.Services.AddHostedService<MindLog.Api.Infrastructure.BackgroundJobs.WeeklyReportJob>();
 
 builder.Services.AddScoped<IReportGenerator, QuestPdfReportGenerator>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
