@@ -26,7 +26,17 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 var connectionString = builder.Configuration.GetConnectionString("SupabaseConnection");
 
 builder.Services.AddDbContext<MindLogDbContext>(options =>
-    options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("SupabaseConnection"),
+        npgsqlOptionsAction: sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null);
+        }
+    ).UseSnakeCaseNamingConvention()
+);
 
 builder.Services.AddScoped<IJournalEntryRepository, JournalEntryRepository>();
 
