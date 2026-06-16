@@ -12,5 +12,7 @@ namespace MindLog.Api.Core.Domain.Interfaces
         Task UpdateAsync(JournalEntry entry);
         Task DeleteAsync(Guid id);
         Task<AnalyticsSummaryDto> GetAnalyticsSummaryAsync(Guid userId, DateTime startDate, DateTime endDate);
+        Task<List<DateTime>> GetEntryDatesAsync(Guid userId);
+        
     }
 }

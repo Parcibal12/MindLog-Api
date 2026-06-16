@@ -20,5 +20,37 @@ namespace MindLog.Api.Core.Application.Services
 
             return await _repository.AddAsync(entry);
         }
+    public async Task<int> GetCurrentStreakAsync(Guid userId)
+        {
+            var entryDates = await _repository.GetEntryDatesAsync(userId);
+
+            if (!entryDates.Any()) return 0;
+
+            int streak = 0;
+            var today = DateTime.UtcNow.Date;
+            var lastEntryDate = entryDates.First();
+
+            if (lastEntryDate < today.AddDays(-1))
+            {
+                return 0;
+            }
+
+            var dateToCheck = lastEntryDate == today ? today : today.AddDays(-1);
+
+            foreach (var date in entryDates)
+            {
+                if (date == dateToCheck)
+                {
+                    streak++;
+                    dateToCheck = dateToCheck.AddDays(-1); 
+                }
+                else if (date < dateToCheck)
+                {
+                    break;
+                }
+            }
+
+            return streak;
+        }
     }
 }

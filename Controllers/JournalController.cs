@@ -160,5 +160,19 @@ namespace MindLog.Api.Controllers
                 .ToListAsync();
             return Ok(tags);
         }
+
+        [HttpGet("streak/{userId}")]
+        public async Task<IActionResult> GetCurrentStreak(Guid userId)
+        {
+            try
+            {
+                var streak = await _journalService.GetCurrentStreakAsync(userId);
+                return Ok(new { currentStreak = streak });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Error al calcular la racha.", details = ex.Message });
+            }
+        }
     }
 }

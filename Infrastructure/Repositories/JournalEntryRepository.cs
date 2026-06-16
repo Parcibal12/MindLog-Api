@@ -134,7 +134,10 @@ namespace MindLog.Api.Infrastructure.Repositories
                     .Where(j => j.UserId == userId && j.DeletedAt == null && j.CreatedAt >= startDate && j.CreatedAt <= endDate)
                     .SelectMany(j => j.EntryContexts)
                     .Where(ec => ec.ContextTag != null && tagNames.Contains(ec.ContextTag!.Name))
-                    .Select(ec => new { Tag = ec.ContextTag!.Name, Emotion = ec.JournalEntry.Emotion!.Name })
+                    .Select(ec => new { 
+                        Tag = ec.ContextTag!.Name, 
+                        Emotion = ec.JournalEntry != null && ec.JournalEntry.Emotion != null ? ec.JournalEntry.Emotion.Name : "Ninguna" 
+                    })
                     .ToListAsync();
 
                 foreach (var tag in topTags)
@@ -157,6 +160,16 @@ namespace MindLog.Api.Infrastructure.Repositories
                 MoodTrend = moodTrend,
                 TopDisparadores = topTags
             };
+        }
+
+        public async Task<List<DateTime>> GetEntryDatesAsync(Guid userId)
+        {
+            return await _context.JournalEntries
+                .Where(j => j.UserId == userId && j.DeletedAt == null)
+                .Select(j => j.CreatedAt.Date)
+                .Distinct()
+                .OrderByDescending(d => d)
+                .ToListAsync();
         }
     }
 }
