@@ -39,8 +39,8 @@ namespace MindLog.Api.Controllers
         {
             try
             {
-                var (feedback, pattern) = await _aiFeedbackService.AnalyzeJournalAsync(request.Content, "No especificada");
-                return Ok(new { feedback, pattern });
+                var aiResult = await _aiFeedbackService.AnalyzeJournalAsync(request.Content);
+                return Ok(aiResult);
             }
             catch (Exception ex)
             {
