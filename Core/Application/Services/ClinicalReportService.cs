@@ -24,7 +24,7 @@ namespace MindLog.Api.Core.Application.Services
         public async Task ProcessAutomaticReportsAsync()
         {
             var endDate = DateTime.UtcNow;
-            var startDate = endDate.AddDays(-30);
+            var startDate = endDate.AddDays(-7);
 
             var eligibleUsers = await _dbContext.Users
                 .Where(u => u.AutoSendReports == true && !string.IsNullOrEmpty(u.TherapistEmail))
@@ -61,7 +61,6 @@ namespace MindLog.Api.Core.Application.Services
                         .FirstOrDefault()?.Key ?? "NINGUNO",
 
                     CriticalEntries = userEntries
-                        .Where(e => e.Intensity >= 7 || e.AiPattern == "CATASTROFIZACION")
                         .Select(e => new CriticalEntry
                         {
                             Date = e.CreatedAt,
@@ -74,9 +73,9 @@ namespace MindLog.Api.Core.Application.Services
 
                 var pdfBytes = await _reportGenerator.GenerateClinicalPdfAsync(summary);
 
-                var subject = $"MindLog: Reporte Clínico Mensual - {user.FullName}";
-                var body = $"Estimado profesional,\n\nAdjunto encontrará el resumen clínico automatizado de su paciente {user.FullName} correspondiente a los últimos 30 días.\n\nAtentamente,\nEl equipo de MindLog.";
-                var fileName = $"Reporte_{user.FullName.Replace(" ", "_")}_{DateTime.UtcNow:MMyyyy}.pdf";
+                var subject = $"MindLog: Reporte Clínico Semanal - {user.FullName}";
+                var body = $"Estimado profesional,\n\nAdjunto encontrará el resumen clínico automatizado de su paciente {user.FullName} correspondiente a los últimos 7 días.\n\nAtentamente,\nEl equipo de MindLog.";
+                var fileName = $"Reporte_{user.FullName.Replace(" ", "_")}_{DateTime.UtcNow:ddMMyyyy}.pdf";
 
                 await _emailSender.SendEmailWithAttachmentAsync(user.TherapistEmail!, subject, body, pdfBytes, fileName);
             }

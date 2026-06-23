@@ -91,11 +91,11 @@ namespace MindLog.Api.Infrastructure.Services
                     DrawTableCell(table, "Patrón cognitivo principal:", summary.DominantCognitivePattern);
                 });
 
-                column.Item().Text("Entradas de Alta Intensidad o Riesgo").FontSize(14).SemiBold().FontColor(MindLogGreen);
+                column.Item().Text("Entradas Recientes").FontSize(14).SemiBold().FontColor(MindLogGreen);
                 
                 if (!summary.CriticalEntries.Any())
                 {
-                    column.Item().Text("No se detectaron entradas críticas en este periodo.").Italic().FontColor(Colors.Grey.Medium);
+                    column.Item().Text("No se detectaron entradas en este periodo.").Italic().FontColor(Colors.Grey.Medium);
                 }
                 else
                 {
